@@ -137,25 +137,27 @@ const loginUser = asyncHandler(async (req,res)=>{
 })
 
 const logoutUser = asyncHandler(async (req,res)=>{
-    const incomingRefreshToken = req.cookies.refreshToken||req.body.refreshToken
-    if(!incomingRefreshToken){
-        throw new ApiError(400,"Refresh token is required")
-    }
-    try {
-        await Token.deleteOne({ token: incomingRefreshToken });
-        return res
-        .status(200)
-        .clearCookie("refreshToken")
-        .clearCookie("accessToken")
-        .json(new ApiResponse(200,"User logged out successfully"))
-    } catch (error) {
-        console.error("Error during logout:", error);
-        return res
-        .status(500)
-        .json(new ApiResponse(500,"Something went wrong while logging out"))
+     await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set:{
+          refreshToken: undefined,
         }
-    }
-)
+      },
+      {new:true}
+     )
+
+     const options = {
+      httpOnly:true,
+      secure: process.env.NODE_ENV === "production",
+     }
+
+     return res
+      .status(200)
+      .clearCookie("refreshToken",options)
+      .clearCookie("accessToken",options)
+      .json(new ApiResponse(200,{},"User logged out successfully"))
+})
 
 const refreshAccessToken = asyncHandler(async (req,res)=>{
     const incomingRefreshToken = req.cookies.refreshToken||req.body.refreshToken
@@ -190,4 +192,4 @@ const refreshAccessToken = asyncHandler(async (req,res)=>{
     }
 })
 
-export { registerUser,loginUser,refreshAccessToken };
+export { registerUser,loginUser,refreshAccessToken,logoutUser };
