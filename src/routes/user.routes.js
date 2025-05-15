@@ -1,41 +1,57 @@
 import { Router } from "express";
 import { 
-    verifyJWT,
-    registerUser,
-    logoutUser,
-    loginUser, 
-    refreshAccessToken, 
-    changeCurrentPassword, 
+    changePassword, 
     getCurrentUser, 
     getUserChannelProfile, 
-    updateAccountDetails, 
-    updateUserCoverImage, 
+    getWatchHistory, 
+    loginUser, 
+    logoutUser, 
+    refreshAccessToken, 
+    registerUser, 
+    updateUserProfile, 
     updateUserAvatar, 
-    getWathcHistory } from "../controllers/user.controllers.js";
-import { uploadFields } from "../middlewares/multer.middlewares.js";  // Import uploadFields middleware
-import { verifyJWT } from "../middlewares/auth.middlewares.js";  // Import JWT verification middleware
-import { verify } from "jsonwebtoken";
+    updateUserCoverImage,
+    clearWatchHistory
+} from "../controllers/user.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { checkUser } from "../middlewares/openRouteAuth.middleware.js"
+import { get } from "mongoose";
+
 const router = Router();
 
-// Route to handle user registration
-router.route("/register").post(uploadFields, registerUser);  // Handle file upload and user registration
-
+router.route("/register").post(
+  upload.fields([
+    {
+      name: "avatar",
+      maxCount: 1,
+    },
+    {
+      name: "coverImage",
+      maxCount: 1,
+    },
+  ]),
+  registerUser
+);
 router.route("/login").post(loginUser);
-router.route("/refresh-token").post(refreshAccessToken)
-//secure routes
-router.route("/change-password").post(verifyJWT,
-    changeCurrentPassword
-)
-router.route("/current-user").get(verifyJWT,getCurrentUser)
-router.route("/c/:username").get(verifyJWT,
-    getUserChannelProfile
-)
-router.route("update-account").patch(verifyJWT,
-    updateAccountDetails
-)
-router.route("/avater").patch(verifyJWT,uploadFields.single("avatar"),updateUserAvatar) // Handle file upload for avatar
-router.route("/cover-image").patch(verifyJWT,uploadFields.single("coverImage"),updateUserCoverImage)
-router.route("/history").get(verifyJWT,getWathcHistory)
+//secured routes
+router.route("/logout").post(verifyJWT, logoutUser);
+router.route("/refresh-token").post(refreshAccessToken);
 
-router.route("/logout").post(verifyJWT,logoutUser)
+router.route("/change-password").patch(verifyJWT, changePassword);
+router.route("/update-profile").patch(verifyJWT, updateUserProfile);
+router
+  .route("/avatar")
+  .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+router
+  .route("/cover-image")
+  .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
+
+router.route("/get-current-user").get(verifyJWT, getCurrentUser);
+router.route("/c/:username").get(checkUser, getUserChannelProfile);
+router
+  .route("/history")
+  .get(verifyJWT, getWatchHistory)
+  .delete(verifyJWT, clearWatchHistory);
+
 export default router;
