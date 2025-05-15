@@ -2,6 +2,7 @@ import dotenv from "dotenv"
 import{app} from './app.js'
 // import express from 'express'
 import connectDB from "./db/index.js"
+import cors from "cors"
 
 // const app = express()
 dotenv.config({
